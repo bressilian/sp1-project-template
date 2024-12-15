@@ -17,24 +17,40 @@ jobs:
     name: Foundry project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Checkout the repository, including submodules
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      # Cache Foundry toolchain to speed up builds
+      - name: Cache Foundry toolchain
+        uses: actions/cache@v3
+        with:
+          path: ~/.foundry
+          key: ${{ runner.os }}-foundry-${{ hashFiles('**/forge.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-foundry-
+
+      # Install Foundry
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
+      # Run Forge build to check for errors and show build sizes
       - name: Run Forge build
         run: |
+          echo "Building contracts..."
           cd contracts
           forge --version
           forge build --sizes
         id: build
 
+      # Run Forge tests to validate the contracts
       - name: Run Forge tests
         run: |
+          echo "Running Forge tests..."
           cd contracts
           forge test -vvv
         id: test
